@@ -56,10 +56,12 @@ def shaffle_images_and_labels(images, labels):
 def inference(x, keep_prob):
   def weight_variable(shape):
     initial = tf.truncated_normal(shape, stddev=0.1)
+
     return tf.Variable(initial)
 
   def bias_variable(shape):
     initial = tf.constant(0.1, shape=shape)
+
     return tf.Variable(initial)
 
   def conv2d(x, W):
@@ -97,16 +99,14 @@ def inference(x, keep_prob):
   with tf.name_scope('fc2'):
     W_fc2 = weight_variable([1024, CLASS_COUNT])
     b_fc2 = bias_variable([CLASS_COUNT])
-
-  with tf.name_scope('softmax'):
-    y = tf.nn.softmax(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
+    y = tf.matmul(h_fc1_drop, W_fc2) + b_fc2
 
   return y
 
 
 def cross_entropy(y, labels):
-  cross_entropy = -tf.reduce_sum(
-    labels * tf.log(tf.clip_by_value(y, 1e-10, 1.0)))
+  cross_entropy = tf.reduce_mean(
+    tf.nn.softmax_cross_entropy_with_logits(logits=y, labels=labels))
   tf.summary.scalar('cross_entropy', cross_entropy)
 
   return cross_entropy
