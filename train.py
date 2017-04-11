@@ -17,10 +17,8 @@ flags.DEFINE_float('learning_rate', 1e-4, 'Initial learning rate.')
 TRAIN_DIR = './data/train'
 TEST_DIR = './data/test'
 LOG_DIR = './log'
-
 dirs = os.listdir(TRAIN_DIR)
 CLASSES = [d for d in os.listdir(TRAIN_DIR) if os.path.isdir(os.path.join(TRAIN_DIR, d))]
-
 PIXEL_COUNT = FLAGS.image_size * FLAGS.image_size * 3
 
 
@@ -66,7 +64,7 @@ with tf.Graph().as_default():
 
   y = cnn.inference(x, keep_prob)
   v = cnn.cross_entropy(y, labels)
-  train_step = cnn.train_step(v)
+  train_step = cnn.train_step(v, FLAGS.learning_rate)
   accuracy = cnn.accuracy(y, labels)
 
   saver = tf.train.Saver()

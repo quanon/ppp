@@ -1,5 +1,6 @@
 import tensorflow as tf
 
+
 class CNN:
   def __init__(self, image_size=48, class_count=2, color_channel_count=3):
     self.image_size = image_size
@@ -56,7 +57,6 @@ class CNN:
 
     return y
 
-
   def cross_entropy(self, y, labels):
     cross_entropy = tf.reduce_mean(
       tf.nn.softmax_cross_entropy_with_logits(logits=y, labels=labels))
@@ -64,12 +64,10 @@ class CNN:
 
     return cross_entropy
 
-
   def train_step(self, cross_entropy, learning_rate=1e-4):
     train_step = tf.train.AdamOptimizer(learning_rate).minimize(cross_entropy)
 
     return train_step
-
 
   def accuracy(self, y, labels):
     correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(labels, 1))
