@@ -5,7 +5,6 @@ import cv2
 import tensorflow as tf
 from cnn import CNN
 
-
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
 flags = tf.app.flags
@@ -33,15 +32,15 @@ labels = tf.placeholder(tf.float32, [None, len(CLASSES)])
 keep_prob = tf.placeholder(tf.float32)
 
 cnn = CNN(image_size=FLAGS.image_size, class_count=len(CLASSES))
-y = cnn.inference(x, keep_prob)
+y = cnn.inference(x, keep_prob, softmax=True)
 sess = tf.InteractiveSession()
 saver = tf.train.Saver()
 sess.run(tf.global_variables_initializer())
 saver.restore(sess, os.path.join(LOG_DIR, 'model.ckpt'))
 
 for i in range(len(test_images)):
-  prediction = np.argmax(sess.run(y, feed_dict={
-    x: [test_images[i]],
-    keep_prob: 1.0})[0])
+  softmax = sess.run(y, feed_dict={x: [test_images[i]], keep_prob: 1.0}).flatten()
+  prediction = np.argmax(softmax)
 
+  print(softmax)
   print(CLASSES[prediction])

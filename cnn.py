@@ -7,7 +7,7 @@ class CNN:
     self.class_count = class_count
     self.color_channel_count = color_channel_count
 
-  def inference(self, x, keep_prob):
+  def inference(self, x, keep_prob, softmax=False):
     def weight_variable(shape):
       initial = tf.truncated_normal(shape, stddev=0.1)
 
@@ -54,6 +54,10 @@ class CNN:
       W_fc2 = weight_variable([1024, self.class_count])
       b_fc2 = bias_variable([self.class_count])
       y = tf.matmul(h_fc1_drop, W_fc2) + b_fc2
+
+    if softmax:
+      with tf.name_scope('softmax'):
+        y = tf.nn.softmax(y)
 
     return y
 
