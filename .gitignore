@@ -1,5 +1,5 @@
 **.DS_store
-
+/__pycache__
 /log
 /data/train/*
 !/data/train/.keep

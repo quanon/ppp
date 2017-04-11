@@ -3,6 +3,7 @@ import re
 import numpy as np
 import cv2
 import tensorflow as tf
+from cnn import CNN
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
@@ -19,10 +20,8 @@ LOG_DIR = './log'
 
 dirs = os.listdir(TRAIN_DIR)
 CLASSES = [d for d in os.listdir(TRAIN_DIR) if os.path.isdir(os.path.join(TRAIN_DIR, d))]
-CLASS_COUNT = len(CLASSES)
 
-COLOR_CHANNEL_COUNT = 3
-PIXEL_COUNT = FLAGS.image_size * FLAGS.image_size * COLOR_CHANNEL_COUNT
+PIXEL_COUNT = FLAGS.image_size * FLAGS.image_size * 3
 
 
 def fetch_images_and_labels(dir):
@@ -39,7 +38,7 @@ def fetch_images_and_labels(dir):
       image = image.flatten().astype(np.float32) / 255.0
       images.append(image)
 
-      label = np.zeros(CLASS_COUNT)
+      label = np.zeros(len(CLASSES))
       label[i] = 1
       labels.append(label)
 
@@ -53,93 +52,22 @@ def shaffle_images_and_labels(images, labels):
     return images[permutation], labels[permutation]
 
 
-def inference(x, keep_prob):
-  def weight_variable(shape):
-    initial = tf.truncated_normal(shape, stddev=0.1)
-
-    return tf.Variable(initial)
-
-  def bias_variable(shape):
-    initial = tf.constant(0.1, shape=shape)
-
-    return tf.Variable(initial)
-
-  def conv2d(x, W):
-    return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
-
-  def max_pool_2x2(x):
-    return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
-
-  x_image = tf.reshape(x, [-1, FLAGS.image_size, FLAGS.image_size, COLOR_CHANNEL_COUNT])
-
-  with tf.name_scope('conv1'):
-    W_conv1 = weight_variable([5, 5, COLOR_CHANNEL_COUNT, 32])
-    b_conv1 = bias_variable([32])
-    h_conv1 = tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1)
-
-  with tf.name_scope('pool1'):
-    h_pool1 = max_pool_2x2(h_conv1)
-
-  with tf.name_scope('conv2'):
-    W_conv2 = weight_variable([5, 5, 32, 64])
-    b_conv2 = bias_variable([64])
-    h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
-
-  with tf.name_scope('pool2'):
-    h_pool2 = max_pool_2x2(h_conv2)
-
-  with tf.name_scope('fc1'):
-    W_fc1 = weight_variable([int(FLAGS.image_size / 4) * int(FLAGS.image_size / 4) * 64, 1024])
-    b_fc1 = bias_variable([1024])
-    h_pool2_flat = tf.reshape(
-      h_pool2, [-1, int(FLAGS.image_size / 4) * int(FLAGS.image_size / 4) * 64])
-    h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
-    h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
-
-  with tf.name_scope('fc2'):
-    W_fc2 = weight_variable([1024, CLASS_COUNT])
-    b_fc2 = bias_variable([CLASS_COUNT])
-    y = tf.matmul(h_fc1_drop, W_fc2) + b_fc2
-
-  return y
-
-
-def cross_entropy(y, labels):
-  cross_entropy = tf.reduce_mean(
-    tf.nn.softmax_cross_entropy_with_logits(logits=y, labels=labels))
-  tf.summary.scalar('cross_entropy', cross_entropy)
-
-  return cross_entropy
-
-
-def train_step(cross_entropy):
-  train_step = tf.train.AdamOptimizer(FLAGS.learning_rate).minimize(cross_entropy)
-
-  return train_step
-
-
-def accuracy(y, labels):
-  correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(labels, 1))
-  accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-  tf.summary.scalar('accuracy', accuracy)
-
-  return accuracy
-
-
 train_images, train_labels = shaffle_images_and_labels(
   *fetch_images_and_labels(TRAIN_DIR))
 test_images, test_labels = shaffle_images_and_labels(
   *fetch_images_and_labels(TEST_DIR))
 
+cnn = CNN(image_size=FLAGS.image_size, class_count=len(CLASSES))
+
 with tf.Graph().as_default():
   x = tf.placeholder(tf.float32, [None, PIXEL_COUNT])
-  labels = tf.placeholder(tf.float32, [None, CLASS_COUNT])
+  labels = tf.placeholder(tf.float32, [None, len(CLASSES)])
   keep_prob = tf.placeholder(tf.float32)
 
-  y = inference(x, keep_prob)
-  v = cross_entropy(y, labels)
-  train_step = train_step(v)
-  accuracy = accuracy(y, labels)
+  y = cnn.inference(x, keep_prob)
+  v = cnn.cross_entropy(y, labels)
+  train_step = cnn.train_step(v)
+  accuracy = cnn.accuracy(y, labels)
 
   saver = tf.train.Saver()
   init = tf.global_variables_initializer()
