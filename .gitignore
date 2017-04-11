@@ -1,0 +1,7 @@
+**.DS_store
+
+/log
+/data/train/*
+!/data/train/.keep
+/data/test/*
+!/data/test/.keep
