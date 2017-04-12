@@ -54,7 +54,7 @@ def get_face_images(image, face_rects):
 def draw_prediction(image, face_rect, prediction):
   x, y, w, h = face_rect
 
-  cv2.rectangle(image, (x, y), (x + w, y + h), (255, 255, 204), 2)
+  cv2.rectangle(image, (x, y), (x + w, y + h), (255, 255, 204), 1)
   cv2.putText(image, CLASSES[prediction], (x, y),
               cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 102), 1, CV_AA)
 

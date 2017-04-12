@@ -18,7 +18,8 @@ TRAIN_DIR = './data/train'
 TEST_DIR = './data/test'
 LOG_DIR = './log'
 dirs = os.listdir(TRAIN_DIR)
-CLASSES = [d for d in os.listdir(TRAIN_DIR) if os.path.isdir(os.path.join(TRAIN_DIR, d))]
+CLASSES = [d for d in os.listdir(TRAIN_DIR)
+           if os.path.isdir(os.path.join(TRAIN_DIR, d))]
 PIXEL_COUNT = FLAGS.image_size * FLAGS.image_size * 3
 
 
@@ -49,11 +50,12 @@ def shaffle_images_and_labels(images, labels):
 
     return images[permutation], labels[permutation]
 
+train_images, train_labels = fetch_images_and_labels(TRAIN_DIR)
+train_images, train_labels = shaffle_images_and_labels(train_images,
+                                                       train_labels)
 
-train_images, train_labels = shaffle_images_and_labels(
-  *fetch_images_and_labels(TRAIN_DIR))
-test_images, test_labels = shaffle_images_and_labels(
-  *fetch_images_and_labels(TEST_DIR))
+test_images, test_labels = fetch_images_and_labels(TEST_DIR)
+test_images, test_labels = shaffle_images_and_labels(test_images, test_labels)
 
 cnn = CNN(image_size=FLAGS.image_size, class_count=len(CLASSES))
 
@@ -80,27 +82,27 @@ with tf.Graph().as_default():
       for j in range(int(len(train_images) / FLAGS.batch_size)):
         batch = FLAGS.batch_size * j
         sess.run(train_step, feed_dict={
-          x: train_images[batch:batch + FLAGS.batch_size],
-          labels: train_labels[batch:batch + FLAGS.batch_size],
-          keep_prob: 0.5})
+                 x: train_images[batch:batch + FLAGS.batch_size],
+                 labels: train_labels[batch:batch + FLAGS.batch_size],
+                 keep_prob: 0.5})
 
       train_accuracy = sess.run(accuracy, feed_dict={
-        x: train_images,
-        labels: train_labels,
-        keep_prob: 1.0})
+                                x: train_images,
+                                labels: train_labels,
+                                keep_prob: 1.0})
 
       print('step %d: training accuracy %g' % (i, train_accuracy))
 
       summary = sess.run(summary_op, feed_dict={
-        x: train_images,
-        labels: train_labels,
-        keep_prob: 1.0})
+                         x: train_images,
+                         labels: train_labels,
+                         keep_prob: 1.0})
       summary_writer.add_summary(summary, i)
 
     test_accuracy = sess.run(accuracy, feed_dict={
-      x: test_images,
-      labels: test_labels,
-      keep_prob: 1.0})
+                             x: test_images,
+                             labels: test_labels,
+                             keep_prob: 1.0})
 
     print('test accuracy %g' % test_accuracy)
 
